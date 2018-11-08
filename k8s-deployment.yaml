@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: workshop-namespaces
+  name: workshop-namespaces
+  namespace: jakub
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        run: workshop-namespaces
+    spec:
+      serviceAccountName: jakub
+      containers:
+      - image: prgcont/workshop-namespace:0.0.1
+        env:
+        - name: ENDPOINT
+          value: https://104.248.207.53:6443
+        - name: CONTEXT
+          value: workshop
+        - name: CLUSTER_NAME
+          value: workshop
+        imagePullPolicy: Always
+        name: workshop-namespaces
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workshop-namespaces
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    run: workshop-namespaces
+  sessionAffinity: None
+  type: ClusterIP

@@ -1,0 +1,21 @@
+* workshop-namespaces                                              :TOC_2_gh:
+  - [[#build-container-image][Build Container Image]]
+  - [[#deploy-to-kubernetes-cluster][Deploy to kubernetes cluster]]
+
+** Build Container Image
+
+Build and publish Container image e.g. using Docker.
+
+#+BEGIN_SRC bash
+docker build -t prgcont/workshop-namespace:0.0.2 .
+docker push prgcont/workshop-namespace:0.0.2
+#+END_SRC
+
+** Deploy to kubernetes cluster
+
+Deploy workshop-namespaces to kubernetes cluster with istio.
+
+#+BEGIN_SRC bash
+kubectl create -f <(istioctl kube-inject -f ./k8s-deployment.yaml)
+kubectl create -f ./k8s-ingress.yaml
+#+END_SRC
