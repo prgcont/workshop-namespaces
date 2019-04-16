@@ -61,14 +61,17 @@ add_namespace_rbac() {
 }
 
 set_kube_config_values() {
-  context=${CONTEXT:-$(kubectl config current-context)}
+  # context=${CONTEXT:-$(kubectl config current-context)}
+  context=workshop
   echo -e "\\nSetting current context to: $context"
 
-  CLUSTER_NAME=${CLUSTER_NAME:-$(kubectl config get-contexts "$context" | awk '{print $3}' | tail -n 1)}
+  # CLUSTER_NAME=${CLUSTER_NAME:-$(kubectl config get-contexts "$context" | awk '{print $3}' | tail -n 1)}
+  CLUSTER_NAME=workshop
   echo "Cluster name: ${CLUSTER_NAME}"
 
-  ENDPOINT=${ENDPOINT:-$(kubectl config view \
-                                 -o jsonpath="{.clusters[?(@.name == \"${CLUSTER_NAME}\")].cluster.server}")}
+  # ENDPOINT=${ENDPOINT:-$(kubectl config view \
+  #                                -o jsonpath="{.clusters[?(@.name == \"${CLUSTER_NAME}\")].cluster.server}")}
+  ENDPOINT=https://2d5a6157-00bd-43ba-9261-38dedea9453b.k8s.ondigitalocean.com
   echo "Endpoint: ${ENDPOINT}"
 
   # Set up the config
