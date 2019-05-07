@@ -1,45 +1,49 @@
 package main
 
 import (
-	"os/exec"
-	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	"github.com/prgcont/workshop-namespace-operator/pkg/apis"
+	workshopnamespacev1alpha1 "github.com/prgcont/workshop-namespace-operator/pkg/apis/operator/v1alpha1"
+	"github.com/prgcont/workshop-namespaces/pkg/handler"
 )
 
 var (
-	script_path = "./create_sa_user.sh"
-	kubecfg_path = "/tmp"
-	default_namespace = "test"
+	defaultNamespace = "test"
 )
 
-func createNamespace(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	namespace := r.Form["namespace"][0]
-
-	kubecfg_file := fmt.Sprintf("%s/%s", kubecfg_path, "k8s-config-" + namespace)
-	cmd := []string{"create", namespace, kubecfg_path}
-	out, err := exec.Command(script_path, cmd...).Output()
-	if err != nil {
-        fmt.Printf("Failed to execute command: %v, output: %s, Error: %v", cmd, out, err)
-		fmt.Fprintf(w, fmt.Sprintf("Failed to create namespace: %s", namespace))
-		return
-    }
-	fmt.Printf("Output of command: %v, output: %s", cmd, out)
-
-	w.Header().Set("Content-Disposition", "attachment; filename=config")
-	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
-
-	http.ServeFile(w, r, kubecfg_file)
-}
-
-func deleteNamespace(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, fmt.Sprint("I am sorry, but I don't know how to delete namespaces yet. Would you teach me that and submit PR at https://github.com/prgcont/workshop-namespaces please?"))
-}
-
 func main() {
+	wnClient, err := getClient()
+	if err != nil {
+		log.Printf("unable create client: %v", err)
+		os.Exit(1)
+	}
+
+	h := handler.New(wnClient)
+
 	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.HandleFunc("/create", createNamespace) // set router
-	http.HandleFunc("/delete", deleteNamespace) // set router
+	http.HandleFunc("/create", h.CreateWorkshopNamespace) // set router
 	log.Fatal(http.ListenAndServe(":9090", nil))
+}
+
+func getClient() (client.Client, error) {
+	// Get config
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Printf("unable get config: %v", err)
+		os.Exit(1)
+	}
+
+	if err := apis.AddToScheme(scheme.Scheme); err != nil {
+		log.Printf("unable add APIs to scheme: %v", err)
+		return nil, err
+	}
+	workshopnamespacev1alpha1.AddToScheme(scheme.Scheme)
+	return client.New(cfg, client.Options{})
 }
