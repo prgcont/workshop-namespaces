@@ -18,6 +18,10 @@ var (
 	defaultNamespace = "test"
 )
 
+// TODO: Handle errors: https://blog.questionable.services/article/http-handler-error-handling-revisited/
+// TODO: Write test
+// TODO: Create and return
+// TODO: Watch for Secret to be created
 func main() {
 	wnClient, err := getClient()
 	if err != nil {

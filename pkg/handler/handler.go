@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -23,12 +24,15 @@ type Handler struct {
 	client client.Client
 }
 
-// CreateWorkshopNamespace is method implementing ServeHttp and creating WorkshopNamespace in k8s cluster
-func (h Handler) CreateWorkshopNamespace(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	namespace := r.Form["namespace"][0]
-	log.Printf("Creating WorkshopNamespace %s", namespace)
-
+// WorkshopNamespaceHandler is method implementing ServeHttp and creating WorkshopNamespace in k8s cluster
+func (h Handler) WorkshopNamespaceHandler(w http.ResponseWriter, r *http.Request) {
+	namespace := r.FormValue("namespace")
+	fmt.Printf("Form data: %+v\n", r.FormValue("namespace"))
+	if namespace == "" {
+		http.Error(w, "Namespace name missing", http.StatusBadRequest)
+		return
+	}
+	// Create/Update WorkshopNamespace
 	wn := workshopnamespacev1alpha1.WorkshopNamespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespace,
@@ -47,3 +51,6 @@ func (h Handler) CreateWorkshopNamespace(w http.ResponseWriter, r *http.Request)
 	// http.ServeFile(w, r, kubecfgFile)
 	return
 }
+
+// TODO FetchKubeconfig
+// TODO DeleteWorkshopNamespace
