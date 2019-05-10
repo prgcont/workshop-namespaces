@@ -1,0 +1,6 @@
+mode: atomic
+github.com/prgcont/workshop-namespaces/pkg/k8s/k8s.go:14.69,19.2 1 1
+github.com/prgcont/workshop-namespaces/pkg/k8s/k8s.go:29.60,38.16 3 1
+github.com/prgcont/workshop-namespaces/pkg/k8s/k8s.go:41.2,41.12 1 1
+github.com/prgcont/workshop-namespaces/pkg/k8s/k8s.go:38.16,40.3 1 0
+github.com/prgcont/workshop-namespaces/pkg/k8s/k8s.go:45.77,47.2 1 0

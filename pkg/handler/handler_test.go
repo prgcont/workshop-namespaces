@@ -8,34 +8,54 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/kubernetes/scheme"
-	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	workshopnamespacev1alpha1 "github.com/prgcont/workshop-namespace-operator/pkg/apis/operator/v1alpha1"
 	"github.com/prgcont/workshop-namespaces/pkg/handler"
 )
 
-func TestHealthCheckHandler(t *testing.T) {
-	err := workshopnamespacev1alpha1.AddToScheme(scheme.Scheme)
-	assert.NoError(t, err, "workshopnamespace scheme can't be added to Scheme")
+func newFakeWorkshopNamespacer(kubeconfig []byte) fakeWorkshopNamespacer {
+	return fakeWorkshopNamespacer{
+		Kubeconfig: kubeconfig,
+	}
+}
 
+type fakeWorkshopNamespacer struct {
+	Namespace  string
+	Kubeconfig []byte
+}
+
+func (f *fakeWorkshopNamespacer) Create(namespace string) error {
+	f.Namespace = namespace
+	return nil
+}
+
+func (f *fakeWorkshopNamespacer) GetKubeconfig(namespace string) ([]byte, error) {
+	return f.Kubeconfig, nil
+}
+
+func TestWorkshopNamespaceHandler(t *testing.T) {
 	tt := []struct {
 		description string
 		data        url.Values
-		statusCode  int
+		returnCode  int
 		body        string
 	}{
 		{
 			description: "Namespace is created",
 			data:        url.Values{"namespace": {"test"}},
-			statusCode:  http.StatusOK,
+			returnCode:  http.StatusOK,
 			body:        "",
+		},
+		{
+			description: "Namespace name is missing",
+			data:        url.Values{},
+			returnCode:  http.StatusBadRequest,
+			body:        "Namespace name missing\n",
 		},
 	}
 
 	for _, table := range tt {
-		t.Run(table.description, func(t *testing.T) {
-			assert := assert.New(t)
+		t.Run(table.description, func(r *testing.T) {
+			runAssert := assert.New(r)
 
 			// Create Test Request
 			req, err := http.NewRequest(
@@ -43,21 +63,21 @@ func TestHealthCheckHandler(t *testing.T) {
 				"/namespace",
 				strings.NewReader(table.data.Encode()),
 			)
-			assert.NoError(err, "Test Request can't be created")
+			runAssert.NoError(err, "Test Request can't be created")
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 			// Initialize handler
-			c := fakeclient.NewFakeClient()
-			nsHandler := handler.New(c)
+			wn := newFakeWorkshopNamespacer([]byte{})
+			nsHandler := handler.New(&wn)
 			handlerFunc := http.HandlerFunc(nsHandler.WorkshopNamespaceHandler)
 			rr := httptest.NewRecorder()
 			handlerFunc.ServeHTTP(rr, req)
 
 			// Check the status code is what we expect.
-			assert.Equal(rr.Code, table.statusCode, "handler returned wrong status code")
+			runAssert.Equal(rr.Code, table.returnCode, "handler returned wrong status code")
 
 			// Check the response body is what we expect.
-			assert.Equal(rr.Body.String(), table.body, "handler returned unexpected body")
+			runAssert.Equal(table.body, rr.Body.String(), "handler returned unexpected body")
 		})
 	}
 }
