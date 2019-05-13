@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workshop-namespaces
+spec:
+  selector:
+    matchLabels:
+      name: workshop-namespaces
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: workshop-namespaces
+    spec:
+      containers:
+      - image: {{ REPLACE_IMAGE }}
+        imagePullPolicy: Always
+        name: workshop-namespaces
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+      restartPolicy: Always

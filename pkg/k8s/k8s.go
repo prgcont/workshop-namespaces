@@ -26,7 +26,7 @@ type WorkshopNamespace struct {
 
 // Create creates WorkshopNamespace CR in k8s cluster.
 // CR is updated in case it's already present.
-func (w *WorkshopNamespace) Create(namespace string) error {
+func (w *WorkshopNamespace) Create(namespace, user string) error {
 	// Create/Update WorkshopNamespace
 	wn := workshopnamespacev1alpha1.WorkshopNamespace{
 		ObjectMeta: metav1.ObjectMeta{

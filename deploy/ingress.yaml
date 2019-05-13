@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: workshop-namespaces
+spec:
+  rules:
+  # you have to add gordon.example.lan to /etc/hosts
+  - host: {{ REPLACE_HOST }}
+    http:
+      paths:
+      # all requests will be sent to port 80 of the gordon service
+      - path: /
+        backend:
+          serviceName: workshop-namespaces
+          servicePort: 9090

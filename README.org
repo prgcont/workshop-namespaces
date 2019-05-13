@@ -7,15 +7,33 @@
 Build and publish Container image e.g. using Docker.
 
 #+BEGIN_SRC bash
-docker build -t prgcont/workshop-namespace:0.0.2 .
-docker push prgcont/workshop-namespace:0.0.2
+docker build -t docker.io/prgcont/workshop-namespaces:v0.0.2 .
+docker push docker.io/prgcont/workshop-namespaces:v0.0.2
 #+END_SRC
 
 ** Deploy to kubernetes cluster
 
-Deploy workshop-namespaces to kubernetes cluster with istio.
+*** Prerequisites
+
+- istioctl
+- kubectl
+- k8s cluster with istio
+- [[https://github.com/prgcont/workshop-namespace-operator][workshop-namespace-operator]] deployed (at least CRD ~WorkshopNamespace~ must be present for testing) 
+
+*** Deployment
+
+**** With Kubernetes Ingress
+
+Deploy ~workshop-namespaces~ to kubernetes cluster with istio.
 
 #+BEGIN_SRC bash
-kubectl create -f <(istioctl kube-inject -f ./k8s-deployment.yaml)
-kubectl create -f ./k8s-ingress.yaml
+PROJECT_NAMESPACE=default
+sed 's/{{ REPLACE_IMAGE }}/docker.io\/prgcont\/workshop-namespaces:v0.0.2/' deploy/deployment.yaml | kubectl -n ${PROJECT_NAMESPACE} create -f -
+kubectl -n ${PROJECT_NAMESPACE} create -f deploy/service.yaml
+sed 's/{{ REPLACE_HOST }}/namespaces.prgcont.cz/' deploy/ingress.yaml | kubectl -n ${PROJECT_NAMESPACE} create -f -
 #+END_SRC
+
+**** With Kubernetes Ingress
+
+*** Cleanup
+

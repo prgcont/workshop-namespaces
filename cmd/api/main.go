@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,9 +29,10 @@ func main() {
 
 	wn := k8s.New(wnClient, "default")
 	h := handler.New(wn)
+	cookieAuthHandler := handler.NewCookieAuth(time.Hour * 2)
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.HandleFunc("/namespaces", h.WorkshopNamespaceHandler) // set router
+	http.Handle("/namespaces", cookieAuthHandler.CookieAuth(h))
 	log.Fatal(http.ListenAndServe(":9090", nil))
 }
 
@@ -48,4 +50,13 @@ func getClient() (client.Client, error) {
 	}
 	workshopnamespacev1alpha1.AddToScheme(scheme.Scheme)
 	return client.New(cfg, client.Options{})
+}
+
+// cookieIdentifier Simple cookie identifier to set cookie to identify user, no auth at the moment
+func cookieIdentifier(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Responding to Request: %+v\n", r)
+		next.ServeHTTP(w, r)
+		return
+	})
 }

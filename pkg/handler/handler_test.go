@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -23,7 +24,7 @@ type fakeWorkshopNamespacer struct {
 	Kubeconfig []byte
 }
 
-func (f *fakeWorkshopNamespacer) Create(namespace string) error {
+func (f *fakeWorkshopNamespacer) Create(namespace, name string) error {
 	f.Namespace = namespace
 	return nil
 }
@@ -63,15 +64,23 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 				"/namespace",
 				strings.NewReader(table.data.Encode()),
 			)
+
 			runAssert.NoError(err, "Test Request can't be created")
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+			userCookie := &http.Cookie{
+				Name:    "auth.user",
+				Value:   "dummy",
+				Path:    "/",
+				Expires: time.Now().Add(time.Hour * 2),
+			}
+			req.AddCookie(userCookie)
 
 			// Initialize handler
 			wn := newFakeWorkshopNamespacer([]byte{})
 			nsHandler := handler.New(&wn)
-			handlerFunc := http.HandlerFunc(nsHandler.WorkshopNamespaceHandler)
 			rr := httptest.NewRecorder()
-			handlerFunc.ServeHTTP(rr, req)
+			nsHandler.ServeHTTP(rr, req)
 
 			// Check the status code is what we expect.
 			runAssert.Equal(rr.Code, table.returnCode, "handler returned wrong status code")
