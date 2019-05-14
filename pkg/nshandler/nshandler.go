@@ -14,39 +14,29 @@ type WorkshopNamespacer interface {
 }
 
 // New creates instance of Handler
-func New(workshopNamespacer WorkshopNamespacer) Handler {
-	return Handler{
-		workshopNamespacer: workshopNamespacer,
-	}
-}
+func New(workshopNamespacer WorkshopNamespacer, authCookie string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, fmt.Sprintf("Method %s is not supported", r.Method), http.StatusBadRequest)
+			return
+		}
 
-// Handler implements http handler
-type Handler struct {
-	workshopNamespacer WorkshopNamespacer
-}
+		namespace := r.FormValue("namespace")
+		if namespace == "" {
+			http.Error(w, "Namespace name missing", http.StatusBadRequest)
+			return
+		}
+		userCookie, err := r.Cookie(authCookie)
+		if err != nil {
+			http.Error(w, "User Cookie missing", http.StatusBadRequest)
+			return
+		}
+		user := userCookie.Value
 
-// ServeHTTP is method implementing ServeHttp and creating WorkshopNamespace in k8s cluster
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, fmt.Sprintf("Method %s is not supported", r.Method), http.StatusBadRequest)
-		return
-	}
-
-	namespace := r.FormValue("namespace")
-	if namespace == "" {
-		http.Error(w, "Namespace name missing", http.StatusBadRequest)
-		return
-	}
-	userCookie, err := r.Cookie(authenticatedUserCookie)
-	if err != nil {
-		http.Error(w, "User Cookie missing", http.StatusBadRequest)
-		return
-	}
-	user := userCookie.Value
-
-	// Create/Update WorkshopNamespace
-	err = h.workshopNamespacer.Create(namespace, user)
-	if err != nil {
-		log.Printf("unable create CR: %v", err)
-	}
+		// Create/Update WorkshopNamespace
+		err = workshopNamespacer.Create(namespace, user)
+		if err != nil {
+			log.Printf("unable create CR: %v", err)
+		}
+	})
 }

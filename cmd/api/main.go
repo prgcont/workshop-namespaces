@@ -16,22 +16,26 @@ import (
 	"github.com/prgcont/workshop-namespaces/pkg/nshandler"
 )
 
-// TODO: Handle errors: https://blog.questionable.services/article/http-handler-error-handling-revisited/
-// TODO: Login with cookies
-// TODO: Create and return
-// TODO: Watch for Secret to be created
 func main() {
+	authCookieName := "auth.user"
 	wnClient, err := getClient()
 	if err != nil {
 		log.Printf("unable create client: %v", err)
 		os.Exit(1)
 	}
 
-	wn := k8s.New(wnClient, "default")
-	h := nshandler.New(wn)
+	// Handlers
+	workshopNamespace := k8s.New(wnClient, "default")
+	nsHandler := nshandler.New(workshopNamespace, authCookieName)
 
-	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.Handle("/namespaces", nshandler.CookieAuth(h))
+	// Middlewares
+	withCookie := nshandler.NewCookieMiddleware(authCookieName, 10, time.Hour*10)
+
+	// Routes
+	http.Handle("/", withCookie(http.FileServer(http.Dir("./static"))))
+	http.Handle("/namespaces", withCookie(nsHandler))
+
+	// Server start
 	log.Fatal(http.ListenAndServe(":9090", nil))
 }
 
@@ -49,13 +53,4 @@ func getClient() (client.Client, error) {
 	}
 	workshopnamespacev1alpha1.AddToScheme(scheme.Scheme)
 	return client.New(cfg, client.Options{})
-}
-
-// cookieIdentifier Simple cookie identifier to set cookie to identify user, no auth at the moment
-func cookieIdentifier(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Responding to Request: %+v\n", r)
-		next.ServeHTTP(w, r)
-		return
-	})
 }

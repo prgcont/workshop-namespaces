@@ -54,6 +54,7 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 		},
 	}
 
+	cookieName := "auth.user"
 	for _, table := range tt {
 		t.Run(table.description, func(r *testing.T) {
 			runAssert := assert.New(r)
@@ -64,12 +65,11 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 				"/namespace",
 				strings.NewReader(table.data.Encode()),
 			)
-
 			runAssert.NoError(err, "Test Request can't be created")
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
+			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 			userCookie := &http.Cookie{
-				Name:    "auth.user",
+				Name:    cookieName,
 				Value:   "dummy",
 				Path:    "/",
 				Expires: time.Now().Add(time.Hour * 2),
@@ -78,7 +78,7 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 
 			// Initialize handler
 			wn := newFakeWorkshopNamespacer([]byte{})
-			nsHandler := nshandler.New(&wn)
+			nsHandler := nshandler.New(&wn, cookieName)
 			rr := httptest.NewRecorder()
 			nsHandler.ServeHTTP(rr, req)
 

@@ -66,7 +66,8 @@ func TestCookieAuth(t *testing.T) {
 			}
 
 			rr := httptest.NewRecorder()
-			h := nshandler.CookieAuth(testHandler)
+			withCookie := nshandler.NewCookieMiddleware(cookieName, 10, time.Hour*10)
+			h := withCookie(testHandler)
 			h.ServeHTTP(rr, req)
 		})
 	}
