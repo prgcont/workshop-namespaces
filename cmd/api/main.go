@@ -12,8 +12,8 @@ import (
 
 	"github.com/prgcont/workshop-namespace-operator/pkg/apis"
 	workshopnamespacev1alpha1 "github.com/prgcont/workshop-namespace-operator/pkg/apis/operator/v1alpha1"
-	"github.com/prgcont/workshop-namespaces/pkg/handler"
 	"github.com/prgcont/workshop-namespaces/pkg/k8s"
+	"github.com/prgcont/workshop-namespaces/pkg/nshandler"
 )
 
 // TODO: Handle errors: https://blog.questionable.services/article/http-handler-error-handling-revisited/
@@ -28,11 +28,10 @@ func main() {
 	}
 
 	wn := k8s.New(wnClient, "default")
-	h := handler.New(wn)
-	cookieAuthHandler := handler.NewCookieAuth(time.Hour * 2)
+	h := nshandler.New(wn)
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.Handle("/namespaces", cookieAuthHandler.CookieAuth(h))
+	http.Handle("/namespaces", nshandler.CookieAuth(h))
 	log.Fatal(http.ListenAndServe(":9090", nil))
 }
 

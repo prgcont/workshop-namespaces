@@ -1,0 +1,21 @@
+mode: atomic
+github.com/prgcont/workshop-namespaces/pkg/nshandler/utils.go:8.13,10.2 1 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/utils.go:14.36,16.19 2 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/utils.go:19.2,19.18 1 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/utils.go:16.19,18.3 1 10
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:18.49,19.71 1 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:19.71,22.17 3 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:25.3,29.23 4 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:22.17,24.4 1 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:33.75,34.17 1 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:37.2,43.3 2 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/cookieauth.go:34.17,36.3 1 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:17.57,21.2 1 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:29.68,30.33 1 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:35.2,36.21 2 2
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:40.2,41.16 2 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:45.2,49.16 3 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:30.33,33.3 2 0
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:36.21,39.3 2 1
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:41.16,44.3 2 0
+github.com/prgcont/workshop-namespaces/pkg/nshandler/nshandler.go:49.16,51.3 1 0

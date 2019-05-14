@@ -1,4 +1,4 @@
-package handler_test
+package nshandler_test
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/prgcont/workshop-namespaces/pkg/handler"
+	"github.com/prgcont/workshop-namespaces/pkg/nshandler"
 )
 
 func newFakeWorkshopNamespacer(kubeconfig []byte) fakeWorkshopNamespacer {
@@ -78,7 +78,7 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 
 			// Initialize handler
 			wn := newFakeWorkshopNamespacer([]byte{})
-			nsHandler := handler.New(&wn)
+			nsHandler := nshandler.New(&wn)
 			rr := httptest.NewRecorder()
 			nsHandler.ServeHTTP(rr, req)
 

@@ -1,4 +1,4 @@
-package handler
+package nshandler
 
 import (
 	"fmt"
@@ -37,7 +37,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Namespace name missing", http.StatusBadRequest)
 		return
 	}
-	// user := r.Context().Value(authenticatedUserKey).(string)
 	userCookie, err := r.Cookie(authenticatedUserCookie)
 	if err != nil {
 		http.Error(w, "User Cookie missing", http.StatusBadRequest)
