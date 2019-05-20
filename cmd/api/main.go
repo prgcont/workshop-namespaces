@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gorilla/mux"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -28,14 +29,18 @@ func main() {
 	workshopNamespace := k8s.New(wnClient, "default")
 	nsHandler := nshandler.New(workshopNamespace, authCookieName)
 
+	// Routes
+	r := mux.NewRouter()
+
+	r.Handle("/", http.FileServer(http.Dir("./static")))
+	r.Handle("/namespaces", nsHandler)
+
 	// Middlewares
 	withCookie := nshandler.NewCookieMiddleware(authCookieName, 10, time.Hour*10)
-
-	// Routes
-	http.Handle("/", withCookie(http.FileServer(http.Dir("./static"))))
-	http.Handle("/namespaces", withCookie(nsHandler))
+	r.Use(withCookie)
 
 	// Server start
+	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":9090", nil))
 }
 
