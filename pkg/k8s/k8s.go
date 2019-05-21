@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	workshopnamespacev1alpha1 "github.com/prgcont/workshop-namespace-operator/pkg/apis/operator/v1alpha1"
@@ -43,5 +45,22 @@ func (w *WorkshopNamespace) Create(namespace, user string) error {
 
 // GetKubeconfig returns kubeconfig for given namespace
 func (w *WorkshopNamespace) GetKubeconfig(namespace string) ([]byte, error) {
-	return []byte{}, nil
+	kubeconfigSecret := corev1.Secret{}
+	kubeconfigNamespacedName := types.NamespacedName{
+		Name:      "kubeconfig-" + namespace,
+		Namespace: w.namespace,
+	}
+	err := w.client.Get(context.TODO(), kubeconfigNamespacedName, &kubeconfigSecret)
+	if err != nil {
+		log.Printf("unable retrieve Kubeconfig: %v", err)
+		return []byte{}, err
+	}
+
+	config, ok := kubeconfigSecret.Data["config"]
+	if !ok {
+		log.Printf("unable retrieve Kubeconfig: %v", err)
+		return []byte{}, err
+	}
+
+	return config, nil
 }

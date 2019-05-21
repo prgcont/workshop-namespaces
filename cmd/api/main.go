@@ -27,13 +27,15 @@ func main() {
 
 	// Handlers
 	workshopNamespace := k8s.New(wnClient, "default")
-	nsHandler := nshandler.New(workshopNamespace, authCookieName)
+	nsCreateHandler := nshandler.NewCreateHandler(workshopNamespace, authCookieName)
+	kubeconfigGetHandler := nshandler.NewKubeconfigGetHandler(workshopNamespace, authCookieName)
 
 	// Routes
 	r := mux.NewRouter()
 
-	r.Handle("/", http.FileServer(http.Dir("./static")))
-	r.Handle("/namespaces", nsHandler)
+	r.Handle("/", http.FileServer(http.Dir("./static"))).Methods("GET")
+	r.Handle("/namespaces", nsCreateHandler).Methods("POST")
+	r.Handle("/kubeconfig/{namespace}", kubeconfigGetHandler).Methods("GET")
 
 	// Middlewares
 	withCookie := nshandler.NewCookieMiddleware(authCookieName, 10, time.Hour*10)

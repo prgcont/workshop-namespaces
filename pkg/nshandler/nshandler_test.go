@@ -1,6 +1,7 @@
 package nshandler_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,29 +9,34 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prgcont/workshop-namespaces/pkg/nshandler"
 )
 
-func newFakeWorkshopNamespacer(kubeconfig []byte) fakeWorkshopNamespacer {
+func newFakeWorkshopNamespacer(kubeconfig map[string][]byte) fakeWorkshopNamespacer {
 	return fakeWorkshopNamespacer{
-		Kubeconfig: kubeconfig,
+		kubeconfig: kubeconfig,
 	}
 }
 
 type fakeWorkshopNamespacer struct {
-	Namespace  string
-	Kubeconfig []byte
+	namespace  string
+	kubeconfig map[string][]byte
 }
 
 func (f *fakeWorkshopNamespacer) Create(namespace, name string) error {
-	f.Namespace = namespace
+	f.namespace = namespace
 	return nil
 }
 
 func (f *fakeWorkshopNamespacer) GetKubeconfig(namespace string) ([]byte, error) {
-	return f.Kubeconfig, nil
+	config, ok := f.kubeconfig[namespace]
+	if !ok {
+		return []byte{}, fmt.Errorf("Kubeconfig not found")
+	}
+	return config, nil
 }
 
 func TestWorkshopNamespaceHandler(t *testing.T) {
@@ -54,7 +60,7 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 		},
 	}
 
-	cookieName := "auth.user"
+	cookieKey := "auth.user"
 	for _, table := range tt {
 		t.Run(table.description, func(r *testing.T) {
 			runAssert := assert.New(r)
@@ -62,14 +68,14 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 			// Create Test Request
 			req, err := http.NewRequest(
 				"POST",
-				"/namespace",
+				"/namespaces",
 				strings.NewReader(table.data.Encode()),
 			)
 			runAssert.NoError(err, "Test Request can't be created")
 
 			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 			userCookie := &http.Cookie{
-				Name:    cookieName,
+				Name:    cookieKey,
 				Value:   "dummy",
 				Path:    "/",
 				Expires: time.Now().Add(time.Hour * 2),
@@ -77,15 +83,75 @@ func TestWorkshopNamespaceHandler(t *testing.T) {
 			req.AddCookie(userCookie)
 
 			// Initialize handler
-			wn := newFakeWorkshopNamespacer([]byte{})
-			nsHandler := nshandler.New(&wn, cookieName)
+			wn := newFakeWorkshopNamespacer(map[string][]byte{})
+			nsHandler := nshandler.NewCreateHandler(&wn, cookieKey)
 			rr := httptest.NewRecorder()
-			nsHandler.ServeHTTP(rr, req)
 
-			// Check the status code is what we expect.
-			runAssert.Equal(rr.Code, table.returnCode, "handler returned wrong status code")
+			router := mux.NewRouter()
+			router.Handle("/namespaces", nsHandler).Methods("POST")
+			router.ServeHTTP(rr, req)
 
-			// Check the response body is what we expect.
+			runAssert.Equal(table.returnCode, rr.Code, "handler returned wrong status code")
+			runAssert.Equal(table.body, rr.Body.String(), "handler returned unexpected body")
+		})
+	}
+}
+
+func TestKubeconfigGetHandler(t *testing.T) {
+	tt := []struct {
+		description string
+		requestPath string
+		returnCode  int
+		body        string
+		kubeconfigs map[string][]byte
+	}{
+		{
+			description: "Kubeconfig is downloaded",
+			requestPath: "/kubeconfig/test",
+			returnCode:  http.StatusOK,
+			body:        "TEST",
+			kubeconfigs: map[string][]byte{"test": []byte("TEST")},
+		},
+		{
+			description: "Kubeconfig is missing",
+			requestPath: "/kubeconfig/test",
+			returnCode:  http.StatusNotFound,
+			body:        "Kubeconfig not found, try again later\n",
+			kubeconfigs: map[string][]byte{},
+		},
+	}
+
+	cookieKey := "auth.user"
+	for _, table := range tt {
+		t.Run(table.description, func(r *testing.T) {
+			runAssert := assert.New(r)
+
+			// Create Test Request
+			req, err := http.NewRequest(
+				"GET",
+				table.requestPath,
+				strings.NewReader(""),
+			)
+			runAssert.NoError(err, "Test Request can't be created")
+
+			userCookie := &http.Cookie{
+				Name:    cookieKey,
+				Value:   "dummy",
+				Path:    "/",
+				Expires: time.Now().Add(time.Hour * 2),
+			}
+			req.AddCookie(userCookie)
+
+			// Initialize handler
+			wn := newFakeWorkshopNamespacer(table.kubeconfigs)
+			kubeconfigGetHandler := nshandler.NewKubeconfigGetHandler(&wn, cookieKey)
+			rr := httptest.NewRecorder()
+
+			router := mux.NewRouter()
+			router.Handle("/kubeconfig/{namespace}", kubeconfigGetHandler).Methods("GET")
+			router.ServeHTTP(rr, req)
+
+			runAssert.Equal(table.returnCode, rr.Code, "handler returned wrong status code")
 			runAssert.Equal(table.body, rr.Body.String(), "handler returned unexpected body")
 		})
 	}
