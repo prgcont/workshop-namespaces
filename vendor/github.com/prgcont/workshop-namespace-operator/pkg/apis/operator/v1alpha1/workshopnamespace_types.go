@@ -27,6 +27,7 @@ import (
 type WorkshopNamespaceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Owner string `json:"owner,omitempty`
 }
 
 // WorkshopNamespaceStatus defines the observed state of WorkshopNamespace
